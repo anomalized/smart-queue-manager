@@ -1,0 +1,648 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Queue - Customer View</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --cyan: #00f2ff;
+      --cyan-dim: rgba(0, 242, 255, 0.15);
+      --cyan-glow: rgba(0, 242, 255, 0.4);
+      --purple: #7000ff;
+      --purple-dim: rgba(112, 0, 255, 0.15);
+      --purple-glow: rgba(112, 0, 255, 0.4);
+      --bg-deep: #050505;
+      --bg-surface: rgba(255, 255, 255, 0.03);
+      --bg-surface-hover: rgba(255, 255, 255, 0.06);
+      --bg-elevated: rgba(255, 255, 255, 0.05);
+      --border-subtle: rgba(255, 255, 255, 0.06);
+      --border-neon: rgba(0, 242, 255, 0.2);
+      --text-primary: #e8eaed;
+      --text-secondary: rgba(255, 255, 255, 0.5);
+      --text-tertiary: rgba(255, 255, 255, 0.3);
+      --danger: #ff3b5c;
+      --danger-glow: rgba(255, 59, 92, 0.3);
+      --warning: #ffb800;
+      --success: #00e68a;
+      --success-glow: rgba(0, 230, 138, 0.3);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-deep);
+      color: var(--text-primary);
+      margin: 0;
+      padding: 15px;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Ambient background */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background:
+        radial-gradient(ellipse at 30% 10%, rgba(0, 242, 255, 0.04) 0%, transparent 50%),
+        radial-gradient(ellipse at 70% 90%, rgba(112, 0, 255, 0.04) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+      animation: ambientShift 25s ease-in-out infinite alternate;
+    }
+
+    @keyframes ambientShift {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(-3%, -2%) scale(1.02); }
+    }
+
+    /* Grid overlay */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.008) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.008) 1px, transparent 1px);
+      background-size: 50px 50px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .app-container {
+      max-width: 600px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header */
+    header {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    h1::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: var(--cyan);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--cyan-glow), 0 0 20px var(--cyan-glow);
+      animation: headerDot 2s ease-in-out infinite;
+    }
+
+    @keyframes headerDot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .subtitle {
+      color: var(--text-tertiary);
+      font-size: 0.75rem;
+      margin-top: 6px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    /* Cards - Glassmorphism */
+    .card {
+      background: var(--bg-surface);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 16px;
+      box-shadow:
+        0 0 0 0.5px var(--border-neon),
+        0 8px 32px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      padding: 22px;
+      border: 0.5px solid var(--border-neon);
+      position: relative;
+      overflow: hidden;
+      transition: all 0.4s ease;
+    }
+
+    .card:hover {
+      box-shadow:
+        0 0 0 0.5px rgba(0, 242, 255, 0.3),
+        0 8px 40px rgba(0, 0, 0, 0.5),
+        0 0 60px rgba(0, 242, 255, 0.03),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 22px;
+      right: 22px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--cyan-glow), transparent);
+      opacity: 0.4;
+    }
+
+    /* Connection Section */
+    .join-box {
+      display: flex;
+      gap: 10px;
+    }
+
+    .input {
+      flex: 1;
+      padding: 14px 16px;
+      border: 0.5px solid var(--border-subtle);
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-family: 'Inter', sans-serif;
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-primary);
+      transition: all 0.3s ease;
+      outline: none;
+    }
+
+    .input::placeholder { color: var(--text-tertiary); }
+
+    .input:focus {
+      border-color: var(--cyan);
+      background: rgba(0, 242, 255, 0.03);
+      box-shadow: 0 0 0 3px rgba(0, 242, 255, 0.08), 0 0 20px rgba(0, 242, 255, 0.05);
+    }
+
+    .button {
+      padding: 14px 22px;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--cyan), #00c8d4);
+      color: #050505;
+      font-size: 0.95rem;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      letter-spacing: 0.02em;
+    }
+
+    .button::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.2) 50%, transparent 60%);
+      transform: translateX(-100%);
+      transition: transform 0.6s ease;
+    }
+
+    .button:hover::after { transform: translateX(100%); }
+
+    .button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px var(--cyan-glow), 0 0 40px rgba(0, 242, 255, 0.15);
+    }
+
+    .button:active { transform: translateY(0); }
+
+    .button:disabled {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-tertiary);
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    .button:disabled::after { display: none; }
+    .button:disabled:hover { transform: none; }
+
+    /* The Ticket (Hero Section) */
+    .ticket-card {
+      text-align: center;
+      background: rgba(255, 255, 255, 0.02);
+      border: 0.5px solid rgba(0, 242, 255, 0.25);
+      position: relative;
+    }
+
+    /* Dashed border effect via pseudo-element */
+    .ticket-card::after {
+      content: '';
+      position: absolute;
+      inset: 8px;
+      border: 1px dashed rgba(0, 242, 255, 0.12);
+      border-radius: 12px;
+      pointer-events: none;
+    }
+
+    .ticket-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--text-tertiary);
+      font-weight: 600;
+    }
+
+    .ticket-number {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 5rem;
+      font-weight: 800;
+      color: var(--cyan);
+      line-height: 1.1;
+      margin: 16px 0;
+      text-shadow: 0 0 40px var(--cyan-glow), 0 0 80px rgba(0, 242, 255, 0.15);
+      animation: ticketGlow 3s ease-in-out infinite;
+    }
+
+    @keyframes ticketGlow {
+      0%, 100% {
+        text-shadow: 0 0 40px var(--cyan-glow), 0 0 80px rgba(0, 242, 255, 0.15);
+      }
+      50% {
+        text-shadow: 0 0 50px var(--cyan-glow), 0 0 100px rgba(0, 242, 255, 0.2), 0 0 150px rgba(0, 242, 255, 0.08);
+      }
+    }
+
+    .wait-time {
+      display: inline-block;
+      background: rgba(0, 242, 255, 0.06);
+      color: var(--cyan);
+      padding: 8px 18px;
+      border-radius: 24px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+      border: 0.5px solid rgba(0, 242, 255, 0.15);
+      letter-spacing: 0.03em;
+    }
+
+    /* Status Grid */
+    .status-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .stat-box {
+      background: rgba(255, 255, 255, 0.02);
+      backdrop-filter: blur(8px);
+      padding: 18px;
+      border-radius: 14px;
+      text-align: center;
+      border: 0.5px solid var(--border-subtle);
+      transition: all 0.3s ease;
+    }
+
+    .stat-box:hover {
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .stat-box.highlight {
+      background: rgba(0, 230, 138, 0.04);
+      border-color: rgba(0, 230, 138, 0.2);
+    }
+
+    .stat-box.highlight .stat-value {
+      color: var(--success);
+      text-shadow: 0 0 20px var(--success-glow);
+      animation: servingPulseCustomer 2s ease-in-out infinite;
+    }
+
+    @keyframes servingPulseCustomer {
+      0%, 100% {
+        text-shadow: 0 0 20px var(--success-glow);
+        opacity: 1;
+      }
+      50% {
+        text-shadow: 0 0 30px var(--success-glow), 0 0 60px rgba(0, 230, 138, 0.15);
+        opacity: 0.85;
+      }
+    }
+
+    .stat-label {
+      font-size: 0.65rem;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      font-weight: 600;
+    }
+
+    .stat-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-top: 6px;
+    }
+
+    /* Metadata row */
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--text-tertiary);
+      margin-bottom: 14px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .meta-row b {
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    .meta-row .danger-val {
+      color: var(--danger);
+    }
+
+    /* Divider */
+    .divider {
+      border: 0;
+      border-top: 0.5px solid var(--border-subtle);
+      margin: 0;
+    }
+
+    /* Token List (Badges) */
+    .token-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+      max-height: 110px;
+      overflow-y: auto;
+      padding: 2px;
+    }
+
+    .token-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-tertiary);
+      border: 0.5px solid var(--border-subtle);
+      transition: all 0.3s ease;
+      animation: badgeFadeIn 0.4s ease-out;
+    }
+
+    @keyframes badgeFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(4px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .token-badge.waiting {
+      background: rgba(0, 242, 255, 0.06);
+      color: var(--cyan);
+      border-color: rgba(0, 242, 255, 0.15);
+    }
+
+    .token-badge.skipped {
+      background: rgba(255, 59, 92, 0.06);
+      color: var(--danger);
+      border-color: rgba(255, 59, 92, 0.15);
+    }
+
+    .token-badge.serving {
+      background: rgba(0, 230, 138, 0.08);
+      color: var(--success);
+      border-color: rgba(0, 230, 138, 0.3);
+      box-shadow: 0 0 12px rgba(0, 230, 138, 0.1);
+    }
+
+    #queueInfo {
+      font-size: 0.85rem;
+      text-align: center;
+      margin-top: 12px;
+      color: var(--cyan);
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+    }
+
+    .activity-label {
+      font-size: 0.65rem;
+      color: var(--text-tertiary);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-weight: 600;
+    }
+
+    .section-title {
+      margin: 0 0 18px 0;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <header>
+      <h1>Smart Queue</h1>
+      <div class="subtitle">Customer Check-in</div>
+    </header>
+
+    <div class="card">
+      <div class="join-box">
+        <input id="queueId" class="input" placeholder="Queue ID (Empty for latest)" />
+        <button class="button" id="btnGetQueue">Load</button>
+      </div>
+      <div id="queueInfo"></div>
+    </div>
+
+    <div class="card ticket-card">
+      <div class="ticket-label">Your Token Number</div>
+      <div class="ticket-number" id="yourToken">-</div>
+
+      <div id="waitInfoArea" style="visibility: hidden;">
+        <div class="wait-time">Est. Wait: <span id="estWait">0</span> mins</div>
+      </div>
+
+      <div style="margin-top: 24px; position: relative; z-index: 2;">
+        <button class="button" id="btnGetToken" style="width: 100%;">Take a Number</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 class="section-title">Live Status</h3>
+
+      <div class="status-grid">
+        <div class="stat-box highlight">
+          <div class="stat-label">Now Serving</div>
+          <div class="stat-value" id="currentServing">-</div>
+        </div>
+
+        <div class="stat-box">
+          <div class="stat-label">Waiting Ahead</div>
+          <div class="stat-value" id="waitingCount">0</div>
+        </div>
+      </div>
+
+      <div class="meta-row">
+        <span>Total Issued: <b id="totalIssued">0</b></span>
+        <span>Skipped: <b id="skippedCount" class="danger-val">0</b></span>
+      </div>
+
+      <hr class="divider">
+
+      <div style="margin-top: 14px;">
+        <div class="activity-label">Recent Activity</div>
+        <div id="tokensList" class="token-list">
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+    const API = (window.location.hostname === 'localhost') ? 'http://localhost:4000/api' : 'http://localhost:4000/api';
+    let currentQueueId = null;
+    let yourToken = null;
+
+    async function loadLatestQueue(providedId) {
+      const infoEl = document.getElementById('queueInfo');
+      try {
+        if (providedId) {
+          const res = await fetch(API + '/queues/' + providedId);
+          if (!res.ok) { infoEl.innerText = 'Queue not found'; infoEl.style.color='#ff3b5c'; return null; }
+          return await res.json();
+        } else {
+          const all = await fetch(API + '/queues').then(r=>r.json());
+          if (!all || all.length === 0) { infoEl.innerText = 'No active queues found'; return null; }
+          return all[all.length-1];
+        }
+      } catch (e) {
+        infoEl.innerText = 'Connection Error';
+        infoEl.style.color='#ff3b5c';
+        return null;
+      }
+    }
+
+    async function refreshUI() {
+      if (!currentQueueId) return;
+
+      try {
+        const q = await fetch(API + '/queues/' + currentQueueId).then(r => r.json());
+        if (!q) return;
+
+        document.getElementById('currentServing').innerText = q.currentServing || '-';
+        document.getElementById('totalIssued').innerText = q.tokenCounter || 0;
+
+        const waitingTokens = q.tokens.filter(t => t.status === 'waiting');
+        const skippedTokens = q.tokens.filter(t => t.status === 'skipped');
+
+        document.getElementById('waitingCount').innerText = waitingTokens.length;
+        document.getElementById('skippedCount').innerText = skippedTokens.length;
+
+        const listEl = document.getElementById('tokensList');
+        listEl.innerHTML = '';
+        q.tokens.slice(-10).reverse().forEach(t => {
+          const span = document.createElement('span');
+          span.className = `token-badge ${t.status}`;
+          if(q.currentServing == t.number) span.classList.add('serving');
+          span.innerText = `#${t.number} ${t.status}`;
+          listEl.appendChild(span);
+        });
+
+        if (yourToken) {
+          document.getElementById('yourToken').innerText = yourToken;
+          document.getElementById('btnGetToken').style.display = 'none';
+          document.getElementById('waitInfoArea').style.visibility = 'visible';
+
+          const myIndex = waitingTokens.findIndex(t => t.number === yourToken);
+
+          if (q.currentServing == yourToken) {
+             document.getElementById('estWait').innerText = "IT'S YOUR TURN!";
+             document.querySelector('.wait-time').style.backgroundColor = 'rgba(0, 230, 138, 0.08)';
+             document.querySelector('.wait-time').style.color = '#00e68a';
+             document.querySelector('.wait-time').style.borderColor = 'rgba(0, 230, 138, 0.3)';
+          } else if (myIndex >= 0) {
+             document.getElementById('estWait').innerText = (myIndex + 1) * 3;
+             document.querySelector('.wait-time').style.backgroundColor = 'rgba(0, 242, 255, 0.06)';
+             document.querySelector('.wait-time').style.color = '#00f2ff';
+             document.querySelector('.wait-time').style.borderColor = 'rgba(0, 242, 255, 0.15)';
+          } else {
+             const myStatus = q.tokens.find(t => t.number === yourToken);
+             if(myStatus) {
+               document.getElementById('estWait').innerText = myStatus.status.toUpperCase();
+             }
+          }
+        }
+      } catch(e) { console.log(e); }
+    }
+
+    document.getElementById('btnGetQueue').addEventListener('click', async () => {
+      const id = document.getElementById('queueId').value.trim();
+      const q = await loadLatestQueue(id);
+      if (!q) return;
+
+      currentQueueId = q._id;
+      document.getElementById('queueInfo').innerText = `Connected: ${q.shopName}`;
+      document.getElementById('queueInfo').style.color = '#00f2ff';
+      refreshUI();
+    });
+
+    document.getElementById('btnGetToken').addEventListener('click', async () => {
+      if (!currentQueueId) { alert('Please load a queue first'); return; }
+
+      try {
+        const res = await fetch(API + '/queues/' + currentQueueId + '/token', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'}
+        });
+
+        if (!res.ok) { alert('Could not get token'); return; }
+        const data = await res.json();
+
+        yourToken = data.token;
+        document.getElementById('yourToken').innerText = yourToken;
+        refreshUI();
+      } catch(e) {
+        alert('Error fetching token');
+      }
+    });
+
+    setInterval(refreshUI, 2000);
+</script>
+</body>
+</html>

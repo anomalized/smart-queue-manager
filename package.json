@@ -1,0 +1,13 @@
+{
+  "name": "smart-queue-manager",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start:backend": "cd backend && npm run dev",
+    "start:frontend": "cd frontend && npx http-server -p 8080",
+    "dev": "concurrently \"npm: start:backend\" \"npm: start:frontend\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}

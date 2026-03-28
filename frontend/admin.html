@@ -1,0 +1,650 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Queue - Admin Console</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --cyan: #00f2ff;
+      --cyan-dim: rgba(0, 242, 255, 0.15);
+      --cyan-glow: rgba(0, 242, 255, 0.4);
+      --purple: #7000ff;
+      --purple-dim: rgba(112, 0, 255, 0.15);
+      --purple-glow: rgba(112, 0, 255, 0.4);
+      --bg-deep: #050505;
+      --bg-surface: rgba(255, 255, 255, 0.03);
+      --bg-surface-hover: rgba(255, 255, 255, 0.06);
+      --bg-elevated: rgba(255, 255, 255, 0.05);
+      --border-subtle: rgba(255, 255, 255, 0.06);
+      --border-neon: rgba(0, 242, 255, 0.2);
+      --text-primary: #e8eaed;
+      --text-secondary: rgba(255, 255, 255, 0.5);
+      --text-tertiary: rgba(255, 255, 255, 0.3);
+      --danger: #ff3b5c;
+      --danger-glow: rgba(255, 59, 92, 0.3);
+      --warning: #ffb800;
+      --warning-glow: rgba(255, 184, 0, 0.3);
+      --success: #00e68a;
+      --success-glow: rgba(0, 230, 138, 0.3);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-deep);
+      color: var(--text-primary);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Ambient background effects */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background:
+        radial-gradient(ellipse at 20% 20%, rgba(0, 242, 255, 0.03) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(112, 0, 255, 0.03) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(0, 242, 255, 0.01) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+      animation: ambientShift 20s ease-in-out infinite alternate;
+    }
+
+    @keyframes ambientShift {
+      0% { transform: translate(0, 0) rotate(0deg); }
+      100% { transform: translate(-2%, -1%) rotate(1deg); }
+    }
+
+    /* Grid noise overlay */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: 
+        linear-gradient(rgba(255,255,255,0.01) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.01) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .dashboard {
+      max-width: 1000px;
+      width: 100%;
+      display: grid;
+      gap: 24px;
+      grid-template-columns: 1fr;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header */
+    header {
+      margin-bottom: 10px;
+      text-align: center;
+      position: relative;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    h1::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: var(--cyan);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--cyan-glow), 0 0 20px var(--cyan-glow);
+      animation: headerDot 2s ease-in-out infinite;
+    }
+
+    @keyframes headerDot {
+      0%, 100% { opacity: 1; box-shadow: 0 0 10px var(--cyan-glow), 0 0 20px var(--cyan-glow); }
+      50% { opacity: 0.6; box-shadow: 0 0 5px var(--cyan-glow); }
+    }
+
+    .subtitle {
+      color: var(--text-tertiary);
+      font-size: 0.8rem;
+      margin-top: 6px;
+      font-weight: 400;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    /* Cards - Glassmorphism */
+    .card {
+      background: var(--bg-surface);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 16px;
+      box-shadow:
+        0 0 0 0.5px var(--border-neon),
+        0 8px 32px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      padding: 28px;
+      border: 0.5px solid var(--border-neon);
+      position: relative;
+      overflow: hidden;
+      transition: box-shadow 0.4s ease, border-color 0.4s ease;
+    }
+
+    .card:hover {
+      box-shadow:
+        0 0 0 0.5px rgba(0, 242, 255, 0.3),
+        0 8px 40px rgba(0, 0, 0, 0.5),
+        0 0 60px rgba(0, 242, 255, 0.03),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      border-color: rgba(0, 242, 255, 0.3);
+    }
+
+    /* Card top accent line */
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 28px;
+      right: 28px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--cyan-glow), transparent);
+      opacity: 0.5;
+    }
+
+    .card-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-top: 0;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 0.5px solid var(--border-subtle);
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    /* Inputs */
+    .input-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .input {
+      padding: 12px 16px;
+      border: 0.5px solid var(--border-subtle);
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-family: 'Inter', sans-serif;
+      width: 100%;
+      transition: all 0.3s ease;
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-primary);
+      outline: none;
+    }
+
+    .input::placeholder {
+      color: var(--text-tertiary);
+    }
+
+    .input:focus {
+      border-color: var(--cyan);
+      background: rgba(0, 242, 255, 0.03);
+      box-shadow: 0 0 0 3px rgba(0, 242, 255, 0.08), 0 0 20px rgba(0, 242, 255, 0.05);
+    }
+
+    /* Date input custom styling */
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(0.7);
+      cursor: pointer;
+    }
+
+    /* Labels */
+    .field-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    /* Buttons */
+    .button {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      background: linear-gradient(135deg, var(--cyan), #00c8d4);
+      color: #050505;
+      font-size: 0.9rem;
+      font-family: 'Inter', sans-serif;
+      position: relative;
+      overflow: hidden;
+      letter-spacing: 0.02em;
+    }
+
+    .button::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.2) 50%, transparent 60%);
+      transform: translateX(-100%);
+      transition: transform 0.6s ease;
+    }
+
+    .button:hover::after {
+      transform: translateX(100%);
+    }
+
+    .button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px var(--cyan-glow), 0 0 40px rgba(0, 242, 255, 0.15);
+    }
+
+    .button:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 10px var(--cyan-glow);
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, var(--danger), #e0294a);
+      color: white;
+    }
+    .btn-danger:hover {
+      box-shadow: 0 4px 20px var(--danger-glow), 0 0 40px rgba(255, 59, 92, 0.15);
+    }
+
+    .btn-warning {
+      background: linear-gradient(135deg, var(--warning), #e6a600);
+      color: #050505;
+    }
+    .btn-warning:hover {
+      box-shadow: 0 4px 20px var(--warning-glow), 0 0 40px rgba(255, 184, 0, 0.15);
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 0.5px solid var(--border-neon);
+      color: var(--cyan);
+    }
+    .btn-outline:hover {
+      background: rgba(0, 242, 255, 0.05);
+      border-color: var(--cyan);
+      box-shadow: 0 0 20px rgba(0, 242, 255, 0.1);
+    }
+    .btn-outline::after { display: none; }
+
+    /* Status Panel */
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .stat-box {
+      background: rgba(255, 255, 255, 0.02);
+      backdrop-filter: blur(8px);
+      padding: 20px 15px;
+      border-radius: 14px;
+      border: 0.5px solid var(--border-subtle);
+      transition: all 0.3s ease;
+    }
+
+    .stat-box:hover {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .stat-label {
+      font-size: 0.65rem;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      font-weight: 600;
+    }
+
+    .stat-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-top: 8px;
+    }
+
+    .serving-highlight {
+      background: rgba(0, 242, 255, 0.04);
+      border-color: rgba(0, 242, 255, 0.2);
+      position: relative;
+    }
+
+    .serving-highlight::after {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: 14px;
+      border: 0.5px solid transparent;
+      background: linear-gradient(135deg, rgba(0, 242, 255, 0.3), transparent, rgba(112, 0, 255, 0.2)) border-box;
+      -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+
+    .serving-highlight .stat-value {
+      font-size: 3.2rem;
+      color: var(--cyan);
+      text-shadow: 0 0 30px var(--cyan-glow), 0 0 60px rgba(0, 242, 255, 0.15);
+      animation: servingPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes servingPulse {
+      0%, 100% {
+        text-shadow: 0 0 30px var(--cyan-glow), 0 0 60px rgba(0, 242, 255, 0.15);
+        opacity: 1;
+      }
+      50% {
+        text-shadow: 0 0 40px var(--cyan-glow), 0 0 80px rgba(0, 242, 255, 0.25), 0 0 120px rgba(0, 242, 255, 0.1);
+        opacity: 0.9;
+      }
+    }
+
+    /* Controls Grid */
+    .controls-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 12px;
+    }
+
+    .big-btn {
+      height: 64px;
+      font-size: 1rem;
+      letter-spacing: 0.03em;
+    }
+
+    /* Divider */
+    .divider {
+      border: 0;
+      border-top: 0.5px solid var(--border-subtle);
+      margin: 24px 0;
+    }
+
+    /* Admin Info */
+    #adminInfo {
+      margin-top: 16px;
+      padding: 14px 18px;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      display: none;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      border: 0.5px solid transparent;
+      backdrop-filter: blur(8px);
+      animation: infoSlideIn 0.4s ease-out;
+    }
+
+    @keyframes infoSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Section header row */
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .section-header .card-title {
+      margin: 0;
+      border: none;
+      padding: 0;
+    }
+
+    .refresh-btn {
+      padding: 8px 14px;
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    /* Footer hint */
+    .hint-text {
+      margin-top: 18px;
+      font-size: 0.7rem;
+      color: var(--text-tertiary);
+      text-align: center;
+      letter-spacing: 0.05em;
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      body { padding: 12px; }
+      .input-group { grid-template-columns: 1fr; }
+      .controls-grid { grid-template-columns: 1fr; }
+      .status-grid { grid-template-columns: 1fr; }
+      .card { padding: 20px; }
+      .serving-highlight .stat-value { font-size: 2.5rem; }
+    }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+  </style>
+</head>
+<body>
+
+  <div class="dashboard">
+    <header>
+      <h1>Smart Queue Admin</h1>
+      <div class="subtitle">Management Console</div>
+    </header>
+
+    <div class="card">
+      <h2 class="card-title">Configuration &amp; Login</h2>
+
+      <div style="margin-bottom: 24px;">
+        <label class="field-label">Create New Queue</label>
+        <div class="input-group" style="margin-top:8px;">
+          <input id="shopName" class="input" placeholder="Shop Name (e.g. Dr. Smith)" />
+          <input id="date" class="input" type="date" placeholder="Date" />
+          <button class="button" id="btnCreate">Create</button>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <div>
+        <label class="field-label">Manage Existing Queue</label>
+        <div class="input-group" style="margin-top:8px;">
+          <input id="adminQueueId" class="input" placeholder="Queue ID" />
+          <input id="adminPassword" class="input" type="password" placeholder="Admin Password" />
+          <button class="button btn-outline" id="btnLoad">Load Dashboard</button>
+        </div>
+      </div>
+
+      <div id="adminInfo"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-header">
+        <h2 class="card-title">Live Operations</h2>
+        <button class="button btn-outline refresh-btn" id="btnRefresh">
+          Refresh Status
+        </button>
+      </div>
+
+      <div class="status-grid">
+        <div class="stat-box serving-highlight">
+          <div class="stat-label">Now Serving</div>
+          <div class="stat-value" id="adminServing">-</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Waiting</div>
+          <div class="stat-value" id="adminWaiting">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Total Issued</div>
+          <div class="stat-value" id="adminTotal">0</div>
+        </div>
+      </div>
+
+      <div class="controls-grid">
+        <button class="button big-btn" id="btnNext">
+          Call Next Token
+        </button>
+        <button class="button big-btn btn-danger" id="btnSkip">
+          Skip
+        </button>
+        <button class="button big-btn btn-warning" id="btnEnd">
+          End Queue
+        </button>
+      </div>
+
+      <div class="hint-text">
+        Authentication required for actions · Ensure password is loaded above
+      </div>
+    </div>
+  </div>
+
+<script>
+  const API = (window.location.hostname === 'localhost') ? 'http://localhost:4000/api' : 'http://localhost:4000/api';
+  let adminQueueId = null;
+
+  document.getElementById('date').valueAsDate = new Date();
+
+  function adminHeaders() {
+    const pw = document.getElementById('adminPassword').value.trim();
+    return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + pw };
+  }
+
+  document.getElementById('btnCreate').addEventListener('click', async () => {
+    const shopName = document.getElementById('shopName').value.trim();
+    const date = document.getElementById('date').value.trim();
+    if (!shopName || !date) { alert('Enter shop and date'); return; }
+
+    try {
+      const res = await fetch(API + '/queues', { method:'POST', headers: adminHeaders(), body: JSON.stringify({ shopName, date }) });
+      if (!res.ok) { const e = await res.json(); alert('Error: ' + (e.error || res.statusText)); return; }
+      const q = await res.json();
+      adminQueueId = q._id;
+      document.getElementById('adminQueueId').value = adminQueueId;
+
+      const infoDiv = document.getElementById('adminInfo');
+      infoDiv.style.display = 'block';
+      infoDiv.innerText = 'Queue created successfully: ' + adminQueueId;
+      infoDiv.style.backgroundColor = 'rgba(0, 230, 138, 0.08)';
+      infoDiv.style.color = '#00e68a';
+      infoDiv.style.borderColor = 'rgba(0, 230, 138, 0.2)';
+
+      refreshAdmin();
+    } catch (err) {
+      alert('Network error: ' + err.message);
+    }
+  });
+
+  document.getElementById('btnLoad').addEventListener('click', () => {
+    adminQueueId = document.getElementById('adminQueueId').value.trim();
+    if (!adminQueueId) { alert('Enter queue id'); return; }
+    refreshAdmin();
+  });
+
+  async function refreshAdmin() {
+    if (!adminQueueId) return;
+    try {
+      const res = await fetch(API + '/queues/' + adminQueueId);
+
+      const infoDiv = document.getElementById('adminInfo');
+
+      if (!res.ok) {
+        infoDiv.style.display = 'block';
+        infoDiv.innerText = 'Queue not found';
+        infoDiv.style.backgroundColor = 'rgba(255, 59, 92, 0.08)';
+        infoDiv.style.color = '#ff3b5c';
+        infoDiv.style.borderColor = 'rgba(255, 59, 92, 0.2)';
+        return;
+      }
+
+      const q = await res.json();
+      document.getElementById('adminServing').innerText = q.currentServing || '-';
+      document.getElementById('adminTotal').innerText = q.tokenCounter || 0;
+      const waiting = q.tokens.filter(t => t.status === 'waiting').length;
+      document.getElementById('adminWaiting').innerText = waiting;
+
+      infoDiv.style.display = 'block';
+      infoDiv.style.backgroundColor = 'rgba(0, 242, 255, 0.05)';
+      infoDiv.style.color = 'var(--cyan)';
+      infoDiv.style.borderColor = 'rgba(0, 242, 255, 0.15)';
+      infoDiv.innerText = `Active: ${q.shopName} (${q.date}) — Status: ${q.status}`;
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async function performAction(actionEndpoint, successMsg) {
+    if (!adminQueueId) { alert('Please Load a queue first'); return; }
+    try {
+      const res = await fetch(API + '/queues/' + adminQueueId + actionEndpoint, { method:'POST', headers: adminHeaders() });
+      if (!res.ok) { const e = await res.json(); alert('Error: ' + (e.error || res.statusText)); return; }
+      refreshAdmin();
+    } catch (err) {
+      alert('Network error: ' + err.message);
+    }
+  }
+
+  document.getElementById('btnNext').addEventListener('click', () => performAction('/next', 'Next called'));
+  document.getElementById('btnSkip').addEventListener('click', () => performAction('/skip', 'Token skipped'));
+  document.getElementById('btnEnd').addEventListener('click', () => {
+    if(confirm('Are you sure you want to close this queue?')) {
+      performAction('/end', 'Queue ended');
+    }
+  });
+
+  document.getElementById('btnRefresh').addEventListener('click', refreshAdmin);
+</script>
+</body>
+</html>
